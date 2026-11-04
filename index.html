@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exodus - Secure Crypto Wallet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Exodus">
+    
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif; 
+            background-color: #07090e; 
+            color: #f8fafc;
+            margin: 0; 
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .app-container { 
+            width: 100%; 
+            height: 100%; 
+            background: linear-gradient(180deg, #161026 0%, #07090e 45%);
+            display: flex; 
+            flex-direction: column; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+        }
+        .view-section { display: none; flex-direction: column; flex: 1; overflow-y: auto; padding: 16px; max-width: 500px; margin: 0 auto; width: 100%; box-sizing: border-box; padding-bottom: 120px; }
+        .view-section.active { display: flex; }
+
+        /* Top Header Icons Bar */
+        .app-top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px 4px 20px;
+            flex-shrink: 0;
+        }
+        .top-icon-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: none;
+            color: #ffffff;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .logo-badge-btn {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border: none;
+            color: #ffffff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 12px;
+            box-shadow: 0 4px 12px rgba(109, 40, 217, 0.4);
+        }
+
+        /* Portfolio Ring Header */
+        .portfolio-header-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 0 20px 0;
+            position: relative;
+        }
+        .ring-wrapper {
+            position: relative;
+            width: 190px;
+            height: 190px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .portfolio-ring-svg {
+            width: 190px;
+            height: 190px;
+            transform: rotate(-90deg);
+        }
+        .ring-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 7; }
+        .ring-segment { fill: none; stroke-width: 7; stroke-linecap: round; transition: stroke-dasharray 0.5s ease; }
+        
+        .ring-center-content {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 12px;
+            width: 100%;
+        }
+        .portfolio-total-val {
+            font-size: 22px;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+            word-break: break-all;
+        }
+
+        /* Action Buttons Pill */
+        .action-pill-container {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 4px 0 20px 0;
+        }
+        .exodus-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            padding: 14px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .exodus-btn.primary {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border: none;
+            box-shadow: 0 4px 15px rgba(109, 40, 217, 0.4);
+        }
+        .exodus-btn:hover { background: rgba(255, 255, 255, 0.12); }
+
+        /* Asset Cards */
+        .asset-card {
+            background: rgba(26, 22, 45, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .asset-card:hover { border-color: rgba(139, 92, 246, 0.4); }
+        .asset-left { display: flex; align-items: center; gap: 14px; }
+        .asset-icon { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 15px; }
+        .asset-name { font-size: 15px; font-weight: 700; color: #f8fafc; }
+        .asset-sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+        .asset-right { text-align: right; }
+        .asset-bal { font-size: 15px; font-weight: 700; color: #f8fafc; }
+        .asset-fiat { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+        /* Bottom Floating Exodus Navigation Bar */
+        .bottom-nav {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 88%;
+            max-width: 380px;
+            background: rgba(22, 16, 38, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 32px;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px;
+            z-index: 999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        .nav-icon-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 18px;
+            cursor: pointer;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, color 0.2s;
+        }
+        .nav-icon-btn.active {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(109, 40, 217, 0.4);
+        }
+
+        /* Coin Detail Screen Styles */
+        .coin-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            margin-bottom: 10px;
+        }
+        .coin-badge-lg {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 10px auto;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+        .timeframe-bar {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255,255,255,0.03);
+            padding: 4px;
+            border-radius: 20px;
+            margin: 16px 0;
+        }
+        .tf-pill {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            padding: 6px 10px;
+            border-radius: 14px;
+            cursor: pointer;
+        }
+        .tf-pill.active {
+            background: rgba(255,255,255,0.1);
+            color: #ffffff;
+        }
+        .coin-stats-row {
+            display: flex;
+            background: rgba(26, 22, 45, 0.7);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .coin-stat-col { flex: 1; }
+        .coin-stat-col:first-child { border-right: 1px solid rgba(255,255,255,0.08); }
+        
+        .coin-tabs {
+            display: flex;
+            gap: 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 16px;
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .coin-tab { padding-bottom: 8px; color: #94a3b8; cursor: pointer; border-bottom: 2px solid transparent; }
+        .coin-tab.active { color: #ffffff; border-bottom-color: #8b5cf6; }
+
+        /* Floating Coin Action Bar */
+        .coin-action-bar {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 420px;
+            background: rgba(22, 16, 38, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 36px;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            z-index: 999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+        .action-bar-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+        .action-bar-btn .icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #ffffff;
+            transition: background 0.2s;
+        }
+        .action-bar-btn.active-pill .icon-circle, .action-bar-btn:hover .icon-circle {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            box-shadow: 0 4px 12px rgba(109, 40, 217, 0.4);
+        }
+        .action-bar-btn.active-pill span { color: #ffffff; }
+
+        /* Modals */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7,9,14,0.85); backdrop-filter: blur(10px); display: flex; align-items: flex-end; justify-content: center; z-index: 99999; }
+        .modal-overlay.hidden { display: none !important; }
+        .modal-box { background: #161026; border-top: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 500px; border-radius: 24px 24px 0 0; padding: 24px; max-height: 85vh; overflow-y: auto; box-shadow: 0 -20px 40px rgba(0,0,0,0.8); }
+        .modal-title { font-size: 16px; font-weight: 800; color: #ffffff; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+
+        .input-group { margin-bottom: 14px; text-align: left; }
+        .input-label { font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 6px; display: block; text-transform: uppercase; }
+        .input-field { width: 100%; padding: 14px; background: rgba(7,9,14,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; font-size: 15px; color: white; outline: none; }
+        .input-field:focus { border-color: #8b5cf6; }
+
+        .slide-container {
+            background: rgba(109, 40, 217, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            border-radius: 30px;
+            height: 56px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .slide-thumb {
+            position: absolute;
+            left: 4px;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            cursor: grab;
+        }
+        .slide-text { font-size: 14px; font-weight: 800; color: #c4b5fd; letter-spacing: 0.5px; }
+
+        /* Professional Toast / In-App Notification Overlay */
+        #app-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-120px);
+            background: #1e1b36;
+            border: 1px solid rgba(139, 92, 246, 0.4);
+            color: #f8fafc;
+            font-weight: 700;
+            padding: 14px 24px;
+            border-radius: 20px;
+            font-size: 13px;
+            z-index: 999999;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #app-toast.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+
+    <!-- IN-APP PROFESSIONAL TOAST NOTIFICATION -->
+    <div id="app-toast">
+        <span id="toast-icon" style="font-size: 16px;">✅</span>
+        <span id="toast-msg">Transaction broadcasted successfully!</span>
+    </div>
+
+    <div class="app-container">
+        
+        <!-- VIEW 1: PORTFOLIO MAIN -->
+        <div class="view-section active" id="view-portfolio">
+            
+            <div class="app-top-nav">
+                <button class="logo-badge-btn">E3</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="top-icon-btn" onclick="showToast('Search indexing active', '🔍')">🔍</button>
+                    <button class="top-icon-btn" onclick="openActivityLog()">🕒</button>
+                </div>
+            </div>
+
+            <div class="portfolio-header-container">
+                <div class="ring-wrapper">
+                    <svg class="portfolio-ring-svg" viewBox="0 0 120 120">
+                        <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+                        <circle id="ring-btc" class="ring-segment" cx="60" cy="60" r="52" stroke="#f7931a" stroke-dasharray="0 326"></circle>
+                        <circle id="ring-eth" class="ring-segment" cx="60" cy="60" r="52" stroke="#a855f7" stroke-dasharray="0 326" stroke-dashoffset="0"></circle>
+                        <circle id="ring-plu" class="ring-segment" cx="60" cy="60" r="52" stroke="#ec4899" stroke-dasharray="0 326" stroke-dashoffset="0"></circle>
+                        <circle id="ring-usdt" class="ring-segment" cx="60" cy="60" r="52" stroke="#22c55e" stroke-dasharray="0 326" stroke-dashoffset="0"></circle>
+                    </svg>
+                    <div class="ring-center-content">
+                        <div class="portfolio-total-val" id="portfolio-main-val">$1,365,696.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-pill-container">
+                <button class="exodus-btn" onclick="openReceiveModal()">Receive</button>
+                <div style="color: #64748b; display: flex; align-items: center; font-size: 12px; font-weight: bold;">or</div>
+                <button class="exodus-btn primary" onclick="openSendModal()">Send / Transfer</button>
+            </div>
+
+            <div class="section-header" style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px;">Portfolio Assets</div>
+
+            <div class="asset-card" onclick="openCoinDetail('BTC')">
+                <div class="asset-left">
+                    <div class="asset-icon" style="color: #f7931a; background: rgba(247, 147, 26, 0.1);">₿</div>
+                    <div>
+                        <div class="asset-name">Bitcoin</div>
+                        <div class="asset-sub" id="btc-sub-bal">17.0000 BTC</div>
+                    </div>
+                </div>
+                <div class="asset-right">
+                    <div class="asset-bal" id="btc-fiat-bal">$1,289,824.00</div>
+                    <div class="asset-fiat" style="color: #22c55e;">+2.4%</div>
+                </div>
+            </div>
+
+            <div class="asset-card" onclick="openCoinDetail('ETH')">
+                <div class="asset-left">
+                    <div class="asset-icon" style="color: #a855f7; background: rgba(168, 85, 247, 0.1);">Ξ</div>
+                    <div>
+                        <div class="asset-name">Ethereum</div>
+                        <div class="asset-sub" id="eth-sub-bal">33.902 ETH</div>
+                    </div>
+                </div>
+                <div class="asset-right">
+                    <div class="asset-bal" id="eth-fiat-bal">$75,872.00</div>
+                    <div class="asset-fiat" style="color: #ef4444;">-0.9%</div>
+                </div>
+            </div>
+
+            <div class="asset-card" onclick="openCoinDetail('PLU')">
+                <div class="asset-left">
+                    <div class="asset-icon" style="color: #ec4899; background: rgba(236, 72, 153, 0.1);">⬡</div>
+                    <div>
+                        <div class="asset-name">Plutonium</div>
+                        <div class="asset-sub" id="plu-sub-bal">0.00 PLU</div>
+                    </div>
+                </div>
+                <div class="asset-right">
+                    <div class="asset-bal" id="plu-fiat-bal">$0.00</div>
+                    <div class="asset-fiat" style="color: #22c55e;">+12.5%</div>
+                </div>
+            </div>
+
+            <div class="asset-card" onclick="openCoinDetail('USDT')">
+                <div class="asset-left">
+                    <div class="asset-icon" style="color: #22c55e; background: rgba(34, 197, 94, 0.1);">₮</div>
+                    <div>
+                        <div class="asset-name">Tether USD</div>
+                        <div class="asset-sub" id="usdt-sub-bal">0.00 USDT</div>
+                    </div>
+                </div>
+                <div class="asset-right">
+                    <div class="asset-bal" id="usdt-fiat-bal">$0.00</div>
+                    <div class="asset-fiat" style="color: #22c55e;">+0.1%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: COIN DETAIL VIEW -->
+        <div class="view-section" id="view-coin-detail">
+            <div class="coin-detail-header">
+                <button class="top-icon-btn" onclick="switchTab('portfolio')">←</button>
+                <div style="font-size: 13px; font-weight: 800; color: #94a3b8; text-transform: uppercase;" id="coin-det-subtitle">Bitcoin</div>
+                <button class="top-icon-btn">···</button>
+            </div>
+
+            <div style="text-align: center; margin-top: 4px;">
+                <div class="coin-badge-lg" id="coin-det-badge" style="background: rgba(247,147,26,0.15); color: #f7931a;">₿</div>
+                <div style="font-size: 28px; font-weight: 900; color: #ffffff;" id="coin-det-price">$76,323.16</div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;" id="coin-det-name-sub">Bitcoin -0.8%</div>
+            </div>
+
+            <div style="margin: 16px 0; height: 110px; width: 100%; position: relative;">
+                <svg width="100%" height="110" viewBox="0 0 350 110" preserveAspectRatio="none">
+                    <path d="M0,90 Q50,30 100,70 T200,40 T300,25 T350,20" fill="none" stroke="#f7931a" stroke-width="2.5"></path>
+                    <circle cx="350" cy="20" r="4" fill="#f7931a"></circle>
+                </svg>
+            </div>
+
+            <div class="timeframe-bar">
+                <div class="tf-pill active">LIVE</div>
+                <div class="tf-pill">1D</div>
+                <div class="tf-pill">7D</div>
+                <div class="tf-pill">1M</div>
+                <div class="tf-pill">3M</div>
+                <div class="tf-pill">6M</div>
+                <div class="tf-pill">1Y</div>
+            </div>
+
+            <div class="coin-stats-row">
+                <div class="coin-stat-col">
+                    <div style="font-size: 16px; font-weight: 800; color: #ffffff;" id="coin-det-holding">17.0000</div>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 2px; text-transform: uppercase;" id="coin-det-symbol">BTC</div>
+                </div>
+                <div class="coin-stat-col">
+                    <div style="font-size: 16px; font-weight: 800; color: #ffffff;" id="coin-det-fiat-val">$1,289,824.00</div>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 2px; text-transform: uppercase;">Value</div>
+                </div>
+            </div>
+
+            <div class="coin-tabs">
+                <div class="coin-tab active">Activity</div>
+                <div class="coin-tab" onclick="showToast('Smart contract verified on mainnet', '🛡️')">About</div>
+            </div>
+
+            <div id="coin-activity-list"></div>
+
+            <div class="coin-action-bar">
+                <button class="action-bar-btn" onclick="openSendModal()">
+                    <div class="icon-circle">↗</div>
+                    <span>Send</span>
+                </button>
+                <button class="action-bar-btn active-pill" onclick="switchTab('swap')">
+                    <div class="icon-circle">⇄</div>
+                    <span>Swap</span>
+                </button>
+                <button class="action-bar-btn" onclick="openReceiveModal()">
+                    <div class="icon-circle">$</div>
+                    <span>Buy / Sell</span>
+                </button>
+                <button class="action-bar-btn" onclick="openReceiveModal()">
+                    <div class="icon-circle">↙</div>
+                    <span>Receive</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- VIEW 3: EXCHANGE / SWAP ENGINE -->
+        <div class="view-section" id="view-swap">
+            <div style="font-size: 18px; font-weight: 800; margin-bottom: 16px; text-align: center;">Exodus Exchange</div>
+            <div class="modal-box" style="background: rgba(26,22,45,0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 20px;">
+                <div class="input-group">
+                    <label class="input-label">You Send (Sell)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="swap-from-amt" class="input-field" value="1" oninput="calculateSwap()">
+                        <select id="swap-from-asset" class="input-field" style="width: 120px;" onchange="calculateSwap()">
+                            <option value="BTC">BTC</option>
+                            <option value="ETH">ETH</option>
+                            <option value="PLU">PLU</option>
+                            <option value="USDT">USDT</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="text-align: center; color: #8b5cf6; font-size: 22px; margin: 6px 0; cursor: pointer;" onclick="reverseSwapAssets()">⇄</div>
+
+                <div class="input-group">
+                    <label class="input-label">You Receive (Convert)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="swap-to-amt" class="input-field" readonly style="color: #22c55e; font-weight: bold;">
+                        <select id="swap-to-asset" class="input-field" style="width: 120px;" onchange="calculateSwap()">
+                            <option value="USDT">USDT</option>
+                            <option value="ETH">ETH</option>
+                            <option value="BTC">BTC</option>
+                            <option value="PLU">PLU</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; margin: 16px 0; font-size: 12px; color: #94a3b8; display: flex; justify-content: space-between;">
+                    <span>Exchange Rate:</span>
+                    <span id="exchange-rate-display" style="color: #f8fafc; font-weight: bold;">1 BTC = 75,872.00 USDT</span>
+                </div>
+
+                <button class="exodus-btn primary" style="width: 100%; padding: 16px;" onclick="executeSwapConversion()">Convert / Exchange Instantly</button>
+            </div>
+        </div>
+
+        <!-- VIEW 4: SETTINGS -->
+        <div class="view-section" id="view-settings">
+            <div style="font-size: 18px; font-weight: 800; margin-bottom: 16px;">Wallet Settings</div>
+            <div class="asset-card" onclick="toggleWalletMode()">
+                <div class="asset-left">
+                    <div class="asset-icon">🔄</div>
+                    <div>
+                        <div class="asset-name">Switch Wallet View Mode</div>
+                        <div class="asset-sub" id="settings-mode-sub">Current: Recipient Mode</div>
+                    </div>
+                </div>
+            </div>
+            <div class="asset-card" onclick="toggleAdminPanel()">
+                <div class="asset-left">
+                    <div class="asset-icon">🛡️</div>
+                    <div>
+                        <div class="asset-name">Consensus Lock Configuration</div>
+                        <div class="asset-sub">Manage transfer restriction rules</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM NAVIGATION -->
+        <div class="bottom-nav" id="main-bottom-nav">
+            <button class="nav-icon-btn active" id="nav-wallet" onclick="switchTab('portfolio')">👛</button>
+            <button class="nav-icon-btn" id="nav-swap" onclick="switchTab('swap')">⇄</button>
+            <button class="nav-icon-btn" id="nav-buy" onclick="openReceiveModal()">$</button>
+            <button class="nav-icon-btn" id="nav-settings" onclick="switchTab('settings')">⚙</button>
+        </div>
+
+    </div>
+
+    <!-- TRANSACTION DETAILS MODAL -->
+    <div id="tx-details-modal" class="modal-overlay hidden" onclick="if(event.target === this) closeTxDetailsModal()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-title">
+                <span>Transaction Details</span>
+                <span style="cursor:pointer; color:#94a3b8;" onclick="closeTxDetailsModal()">✕</span>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 13px; color: #94a3b8; text-transform: uppercase;" id="tx-det-type">Sent</div>
+                <div style="font-size: 24px; font-weight: 900; color: #f8fafc; margin-top: 4px;" id="tx-det-amount">-0.00377938 BTC</div>
+            </div>
+            <div class="asset-card" style="cursor: default; padding: 12px 16px; margin-bottom: 6px;">
+                <div style="font-size: 12px; color: #94a3b8;">Status</div>
+                <div style="font-size: 13px; font-weight: 700; color: #22c55e;">Complete</div>
+            </div>
+            <div class="asset-card" style="cursor: default; padding: 12px 16px; margin-bottom: 6px;">
+                <div style="font-size: 12px; color: #94a3b8;">Date</div>
+                <div style="font-size: 13px; font-weight: 700; color: #f8fafc;" id="tx-det-date">Apr 8, 2024, 1:15 PM</div>
+            </div>
+            <div class="asset-card" style="cursor: default; padding: 12px 16px; margin-bottom: 6px;">
+                <div style="font-size: 12px; color: #94a3b8;" id="tx-det-addr-label">Sent to</div>
+                <div style="font-size: 13px; font-weight: 700; color: #8b5cf6;" id="tx-det-addr">3Qzuk9u1...4bnZmWrn</div>
+            </div>
+            <div class="asset-card" style="cursor: default; padding: 12px 16px; margin-bottom: 16px;">
+                <div style="font-size: 12px; color: #94a3b8;">Transaction ID</div>
+                <div style="font-size: 13px; font-weight: 700; color: #8b5cf6;" id="tx-det-hash">6d89a4a5...d5e195112</div>
+            </div>
+            <button class="exodus-btn" style="width: 100%; background: rgba(255,255,255,0.08);" onclick="closeTxDetailsModal()">Contact Support</button>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="admin-modal" class="modal-overlay hidden" onclick="if(event.target === this) toggleAdminPanel()">
+        <div class="modal-box" style="max-width: 480px;" onclick="event.stopPropagation()">
+            <div class="modal-title">
+                <span>🛡️ Plutonium Control Center</span>
+                <span style="cursor:pointer; color:#94a3b8;" onclick="toggleAdminPanel()">✕</span>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Wallet Mode View</label>
+                <select id="admin-view-mode" class="input-field" onchange="setWalletMode(this.value)">
+                    <option value="sender">Sender Mode ($20M liquidity)</option>
+                    <option value="recipient">Recipient Mode (Live balance display)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Transfer Restriction Lock (Recipient Outbound)</label>
+                <select id="admin-lock-mode" class="input-field">
+                    <option value="locked">Enabled (Recipient sees balance live, but outgoing transfers FAIL)</option>
+                    <option value="unlocked">Disabled (Normal unrestricted transfer)</option>
+                </select>
+            </div>
+            <button class="exodus-btn primary" style="width: 100%; margin-top: 10px;" onclick="toggleAdminPanel()">Save Configuration</button>
+        </div>
+    </div>
+
+    <!-- SEND MODAL (Professional Slide to Send with Real Loading State) -->
+    <div id="send-modal" class="modal-overlay hidden" onclick="if(event.target === this) closeSendModal()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-title">
+                <span>Send Asset</span>
+                <span style="cursor:pointer; color:#94a3b8;" onclick="closeSendModal()">✕</span>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Select Asset</label>
+                <select id="send-asset" class="input-field">
+                    <option value="BTC">Bitcoin (BTC)</option>
+                    <option value="ETH">Ethereum (ETH)</option>
+                    <option value="PLU">Plutonium (PLU)</option>
+                    <option value="USDT">Tether USD (USDT)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Recipient Address</label>
+                <input type="text" id="send-address" class="input-field" placeholder="bc1q... or 0x...">
+            </div>
+            <div class="input-group">
+                <label class="input-label">Amount</label>
+                <input type="number" id="send-amount" class="input-field" placeholder="0.00">
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; margin-bottom: 16px; font-size: 12px; color: #94a3b8; display: flex; justify-content: space-between;">
+                <span>Estimated Network Fee:</span>
+                <span style="color: #f8fafc; font-weight: bold;">$5.20</span>
+            </div>
+            
+            <div class="slide-container" id="slide-send-btn">
+                <div class="slide-thumb" id="slide-thumb">↗</div>
+                <div class="slide-text" id="slide-label">SLIDE TO SEND</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECEIVE MODAL -->
+    <div id="receive-modal" class="modal-overlay hidden" onclick="if(event.target === this) closeReceiveModal()">
+        <div class="modal-box" style="text-align: center;" onclick="event.stopPropagation()">
+            <div class="modal-title">
+                <span id="receive-modal-title">Receive Bitcoin (BTC)</span>
+                <span style="cursor:pointer; color:#94a3b8;" onclick="closeReceiveModal()">✕</span>
+            </div>
+            <div style="background: white; padding: 16px; display: inline-block; border-radius: 16px; margin-bottom: 16px;">
+                <svg width="140" height="140" viewBox="0 0 24 24"><path fill="#07090e" d="M2 2h8v8H2V2m2 2v4h4V4H4m10-2h8v8h-8V2m2 2v4h4V4h-4M2 14h8v8H2v-8m2 2v4h4v-4H4m12-2h2v2h-2v-2m4 0h2v2h-2v-2m-4 4h2v2h-2v-2m4 0h2v2h-2v-2m-4 4h2v2h-2v-2m4 0h2v2h-2v-2m-2-6h2v2h-2v-2m2 4h2v2h-2v-2z"/></svg>
+            </div>
+            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;" id="receive-network-label">Native SegWit Bitcoin Address</div>
+            <div id="receive-address-box" onclick="copyReceiveAddress()" style="font-size: 13px; font-weight: bold; color: #8b5cf6; background: rgba(7,9,14,0.8); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); word-break: break-all; cursor: pointer;" title="Tap to copy">
+                bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+            </div>
+            <div style="font-size: 10px; color: #64748b; margin-top: 4px;">Tap address to copy to clipboard</div>
+
+            <button class="exodus-btn" style="width: 100%; margin-top: 16px; background: rgba(255,255,255,0.08);" onclick="closeReceiveModal()">Done</button>
+        </div>
+    </div>
+
+    <script>
+        let walletMode = localStorage.getItem('wallet_mode') || 'recipient';
+        let currentCoin = 'BTC';
+
+        const networkAddresses = {
+            BTC: { name: "Bitcoin (BTC)", label: "Native SegWit Bitcoin Address", addr: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" },
+            ETH: { name: "Ethereum (ETH)", label: "Ethereum ERC-20 Network Address", addr: "0x71C9fB4821a3B2901c892A1e49b2E14a79b" },
+            PLU: { name: "Plutonium (PLU)", label: "Plutonium Custodial Mainnet Address", addr: "plu1q892a1e49b2e14a79b71c9fb4821a3b290" },
+            USDT: { name: "Tether USD (USDT)", label: "Tether USD (ERC-20 / TRC-20) Address", addr: "0x3B2901c892A1e49b2E14a79b71C9fB4821a" }
+        };
+
+        let senderBtc = parseFloat(localStorage.getItem('sender_btc')) || 0.00;
+        let senderEth = parseFloat(localStorage.getItem('sender_eth')) || 0.00;
+        let senderPlu = parseFloat(localStorage.getItem('sender_plu')) || 20000000.00;
+        let senderUsdt = parseFloat(localStorage.getItem('sender_usdt')) || 0.00;
+
+        let recipBtc = parseFloat(localStorage.getItem('recip_btc')) || 17.00;
+        let recipEth = parseFloat(localStorage.getItem('recip_eth')) || 33.902;
+        let recipPlu = parseFloat(localStorage.getItem('recip_plu')) || 0.00;
+        let recipUsdt = parseFloat(localStorage.getItem('recip_usdt')) || 0.00;
+
+        let txHistory = JSON.parse(localStorage.getItem('tx_history')) || [
+            { type: "Received", asset: "BTC", amount: "+17.00 BTC", fiat: "$1,289,824.00", date: "Just now", hash: "aac55526...4c4f7058b", addr: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" },
+            { type: "Received", asset: "ETH", amount: "+33.902 ETH", fiat: "$75,872.00", date: "Just now", hash: "9e81b4fa...1a2d48c", addr: "0x71C9fB4821a3B2901c892A1e49b" },
+            { type: "Sent", asset: "BTC", amount: "-0.00377938 BTC", fiat: "$270.71", date: "Apr 8, 2024, 1:15 PM", hash: "6d89a4a5...d5e195112", addr: "3Qzuk9u1...4bnZmWrn" }
+        ];
+
+        let transferLocked = localStorage.getItem('transfer_locked') !== 'false';
+
+        window.addEventListener('storage', () => {
+            senderBtc = parseFloat(localStorage.getItem('sender_btc')) || senderBtc;
+            senderEth = parseFloat(localStorage.getItem('sender_eth')) || senderEth;
+            senderPlu = parseFloat(localStorage.getItem('sender_plu')) || senderPlu;
+            senderUsdt = parseFloat(localStorage.getItem('sender_usdt')) || senderUsdt;
+            recipBtc = parseFloat(localStorage.getItem('recip_btc')) || recipBtc;
+            recipEth = parseFloat(localStorage.getItem('recip_eth')) || recipEth;
+            recipPlu = parseFloat(localStorage.getItem('recip_plu')) || recipPlu;
+            recipUsdt = parseFloat(localStorage.getItem('recip_usdt')) || recipUsdt;
+            txHistory = JSON.parse(localStorage.getItem('tx_history')) || txHistory;
+            transferLocked = localStorage.getItem('transfer_locked') !== 'false';
+            walletMode = localStorage.getItem('wallet_mode') || walletMode;
+            updateUI();
+        });
+
+        function updateUI() {
+            let btc = (walletMode === 'sender') ? senderBtc : recipBtc;
+            let eth = (walletMode === 'sender') ? senderEth : recipEth;
+            let plu = (walletMode === 'sender') ? senderPlu : recipPlu;
+            let usdt = (walletMode === 'sender') ? senderUsdt : recipUsdt;
+
+            document.getElementById('btc-sub-bal').innerText = btc.toFixed(4) + " BTC";
+            document.getElementById('btc-fiat-bal').innerText = "$" + (btc * 75872).toLocaleString('en-US', {minimumFractionDigits: 2});
+
+            document.getElementById('eth-sub-bal').innerText = eth.toLocaleString('en-US', {minimumFractionDigits: 3}) + " ETH";
+            document.getElementById('eth-fiat-bal').innerText = "$" + (eth * 2238).toLocaleString('en-US', {minimumFractionDigits: 2});
+
+            document.getElementById('plu-sub-bal').innerText = plu.toLocaleString('en-US', {minimumFractionDigits: 2}) + " PLU";
+            document.getElementById('plu-fiat-bal').innerText = "$" + plu.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+            document.getElementById('usdt-sub-bal').innerText = usdt.toLocaleString('en-US', {minimumFractionDigits: 2}) + " USDT";
+            document.getElementById('usdt-fiat-bal').innerText = "$" + usdt.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+            const btcVal = btc * 75872;
+            const ethVal = eth * 2238;
+            const pluVal = plu;
+            const usdtVal = usdt;
+            const totalVal = btcVal + ethVal + pluVal + usdtVal;
+
+            document.getElementById('portfolio-main-val').innerText = "$" + totalVal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            const circumference = 326;
+            if (totalVal > 0) {
+                let btcDash = (btcVal / totalVal) * circumference;
+                let ethDash = (ethVal / totalVal) * circumference;
+                let pluDash = (pluVal / totalVal) * circumference;
+                let usdtDash = (usdtVal / totalVal) * circumference;
+
+                document.getElementById('ring-btc').style.strokeDasharray = `${btcDash} ${circumference}`;
+                document.getElementById('ring-eth').style.strokeDasharray = `${ethDash} ${circumference}`;
+                document.getElementById('ring-eth').style.strokeDashoffset = -btcDash;
+                document.getElementById('ring-plu').style.strokeDasharray = `${pluDash} ${circumference}`;
+                document.getElementById('ring-plu').style.strokeDashoffset = -(btcDash + ethDash);
+                document.getElementById('ring-usdt').style.strokeDasharray = `${usdtDash} ${circumference}`;
+                document.getElementById('ring-usdt').style.strokeDashoffset = -(btcDash + ethDash + pluDash);
+            }
+
+            if(walletMode === 'recipient') {
+                document.getElementById('settings-mode-sub').innerText = "Current: Recipient Mode";
+            } else {
+                document.getElementById('settings-mode-sub').innerText = "Current: Sender Dashboard";
+            }
+            calculateSwap();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateUI();
+            document.getElementById('admin-lock-mode').value = transferLocked ? 'locked' : 'unlocked';
+            document.getElementById('admin-view-mode').value = walletMode;
+
+            // Professional Slide to Send Physics
+            const thumb = document.getElementById('slide-thumb');
+            const container = document.getElementById('slide-send-btn');
+            const label = document.getElementById('slide-label');
+            let dragging = false;
+
+            thumb.addEventListener('mousedown', () => dragging = true);
+            window.addEventListener('mouseup', () => {
+                if(dragging) { dragging = false; thumb.style.left = '4px'; label.style.opacity = '1'; }
+            });
+            window.addEventListener('mousemove', (e) => {
+                if(!dragging) return;
+                let rect = container.getBoundingClientRect();
+                let pos = e.clientX - rect.left - 24;
+                if(pos > 4 && pos < rect.width - 56) {
+                    thumb.style.left = pos + 'px';
+                    label.style.opacity = Math.max(0.2, 1 - (pos / (rect.width * 0.7)));
+                } else if(pos >= rect.width - 56) {
+                    dragging = false;
+                    thumb.style.left = '4px';
+                    label.style.opacity = '1';
+                    submitSendTransaction();
+                }
+            });
+            thumb.addEventListener('click', () => { submitSendTransaction(); });
+        });
+
+        function toggleWalletMode() {
+            walletMode = (walletMode === 'sender') ? 'recipient' : 'sender';
+            localStorage.setItem('wallet_mode', walletMode);
+            updateUI();
+            showToast("Switched to " + walletMode.toUpperCase() + " mode", "🔄");
+        }
+
+        function setWalletMode(m) {
+            walletMode = m;
+            localStorage.setItem('wallet_mode', walletMode);
+            updateUI();
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.bottom-nav .nav-icon-btn').forEach(el => el.classList.remove('active'));
+
+            if(tabName === 'portfolio') {
+                document.getElementById('view-portfolio').classList.add('active');
+                document.getElementById('nav-wallet').classList.add('active');
+                document.getElementById('main-bottom-nav').style.display = 'flex';
+            } else if(tabName === 'swap') {
+                document.getElementById('view-swap').classList.add('active');
+                document.getElementById('nav-swap').classList.add('active');
+                document.getElementById('main-bottom-nav').style.display = 'flex';
+            } else if(tabName === 'settings') {
+                document.getElementById('view-settings').classList.add('active');
+                document.getElementById('nav-settings').classList.add('active');
+                document.getElementById('main-bottom-nav').style.display = 'flex';
+            }
+        }
+
+        function openCoinDetail(symbol) {
+            currentCoin = symbol;
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('main-bottom-nav').style.display = 'none';
+            document.getElementById('view-coin-detail').classList.add('active');
+
+            let btc = (walletMode === 'sender') ? senderBtc : recipBtc;
+            let eth = (walletMode === 'sender') ? senderEth : recipEth;
+            let plu = (walletMode === 'sender') ? senderPlu : recipPlu;
+            let usdt = (walletMode === 'sender') ? senderUsdt : recipUsdt;
+
+            const configs = {
+                BTC: { name: "Bitcoin", icon: "₿", rate: "$76,323.16", change: "-0.8%", color: "#f7931a", bal: btc.toFixed(4), fiat: "$" + (btc * 75872).toLocaleString('en-US', {minimumFractionDigits: 2}) },
+                ETH: { name: "Ethereum", icon: "Ξ", rate: "$2,245.64", change: "-0.7%", color: "#a855f7", bal: eth.toFixed(3), fiat: "$" + (eth * 2238).toLocaleString('en-US', {minimumFractionDigits: 2}) },
+                PLU: { name: "Plutonium", icon: "⬡", rate: "$1.00", change: "+12.5%", color: "#ec4899", bal: plu.toFixed(2), fiat: "$" + plu.toLocaleString('en-US', {minimumFractionDigits: 2}) },
+                USDT: { name: "Tether USD", icon: "₮", rate: "$1.00", change: "+0.1%", color: "#22c55e", bal: usdt.toFixed(2), fiat: "$" + usdt.toLocaleString('en-US', {minimumFractionDigits: 2}) }
+            };
+
+            let cfg = configs[symbol];
+            document.getElementById('coin-det-subtitle').innerText = cfg.name;
+            document.getElementById('coin-det-badge').innerText = cfg.icon;
+            document.getElementById('coin-det-badge').style.background = cfg.color + "22";
+            document.getElementById('coin-det-badge').style.color = cfg.color;
+            document.getElementById('coin-det-price').innerText = cfg.rate;
+            document.getElementById('coin-det-name-sub').innerText = `${cfg.name} ${cfg.change}`;
+            document.getElementById('coin-det-holding').innerText = cfg.bal;
+            document.getElementById('coin-det-symbol').innerText = symbol;
+            document.getElementById('coin-det-fiat-val').innerText = cfg.fiat;
+
+            const list = document.getElementById('coin-activity-list');
+            list.innerHTML = "";
+            let filtered = txHistory.filter(tx => tx.asset.includes(symbol));
+            if(filtered.length === 0) {
+                list.innerHTML = `<div style="text-align: center; color: #94a3b8; padding: 24px; font-size: 13px;">No recent activity for ${symbol}</div>`;
+            } else {
+                filtered.forEach(tx => {
+                    list.innerHTML += `
+                        <div class="asset-card" onclick='openTxDetail(${JSON.stringify(tx)})'>
+                            <div class="asset-left">
+                                <div class="asset-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">${tx.type === 'Received' ? '↙' : '↗'}</div>
+                                <div>
+                                    <div class="asset-name">${tx.type} (${tx.asset})</div>
+                                    <div class="asset-sub">${tx.date}</div>
+                                </div>
+                            </div>
+                            <div class="asset-right">
+                                <div class="asset-bal" style="color: ${tx.type==='Received'?'#22c55e':'#f8fafc'};">${tx.amount}</div>
+                                <div class="asset-fiat">${tx.fiat}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function toggleAdminPanel() { document.getElementById('admin-modal').classList.toggle('hidden'); }
+        
+        function openSendModal() { 
+            document.getElementById('send-asset').value = currentCoin;
+            document.getElementById('send-modal').classList.remove('hidden'); 
+        }
+        function closeSendModal() { document.getElementById('send-modal').classList.add('hidden'); }
+
+        function openReceiveModal() {
+            let info = networkAddresses[currentCoin] || networkAddresses['BTC'];
+            document.getElementById('receive-modal-title').innerText = `Receive ${info.name}`;
+            document.getElementById('receive-network-label').innerText = info.label;
+            document.getElementById('receive-address-box').innerText = info.addr;
+            document.getElementById('receive-modal').classList.remove('hidden');
+        }
+        function closeReceiveModal() { document.getElementById('receive-modal').classList.add('hidden'); }
+
+        function copyReceiveAddress() {
+            const addrText = document.getElementById('receive-address-box').innerText;
+            navigator.clipboard.writeText(addrText).then(() => {
+                showToast("Address copied to clipboard", "📋");
+            }).catch(() => {
+                showToast("Address copied to clipboard", "📋");
+            });
+        }
+
+        function showToast(msg, icon = "✅") {
+            const toast = document.getElementById('app-toast');
+            document.getElementById('toast-msg').innerText = msg;
+            document.getElementById('toast-icon').innerText = icon;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 2500);
+        }
+
+        function closeTxDetailsModal() { document.getElementById('tx-details-modal').classList.add('hidden'); }
+
+        function openTxDetail(tx) {
+            document.getElementById('tx-det-type').innerText = tx.type;
+            document.getElementById('tx-det-amount').innerText = tx.amount;
+            document.getElementById('tx-det-date').innerText = tx.date;
+            document.getElementById('tx-det-addr').innerText = tx.addr;
+            document.getElementById('tx-det-hash').innerText = tx.hash;
+            document.getElementById('tx-details-modal').classList.remove('hidden');
+        }
+
+        function calculateSwap() {
+            const amt = parseFloat(document.getElementById('swap-from-amt').value) || 0;
+            const from = document.getElementById('swap-from-asset').value;
+            const to = document.getElementById('swap-to-asset').value;
+            const prices = { BTC: 75872, ETH: 2238, PLU: 1, USDT: 1 };
+            let val = amt * prices[from];
+            let res = val / prices[to];
+            document.getElementById('swap-to-amt').value = res.toFixed(4);
+            document.getElementById('exchange-rate-display').innerText = `1 ${from} = ${(prices[from] / prices[to]).toLocaleString()} ${to}`;
+        }
+
+        function reverseSwapAssets() {
+            const fromEl = document.getElementById('swap-from-asset');
+            const toEl = document.getElementById('swap-to-asset');
+            let temp = fromEl.value;
+            fromEl.value = toEl.value;
+            toEl.value = temp;
+            calculateSwap();
+        }
+
+        function executeSwapConversion() {
+            const amt = parseFloat(document.getElementById('swap-from-amt').value) || 0;
+            const from = document.getElementById('swap-from-asset').value;
+            const to = document.getElementById('swap-to-asset').value;
+
+            if(amt <= 0) { showToast("Enter a valid amount", "⚠️"); return; }
+
+            let bals = { BTC: (walletMode==='sender'?senderBtc:recipBtc), ETH: (walletMode==='sender'?senderEth:recipEth), PLU: (walletMode==='sender'?senderPlu:recipPlu), USDT: (walletMode==='sender'?senderUsdt:recipUsdt) };
+            if(amt > bals[from]) { showToast(`Insufficient ${from} balance`, "❌"); return; }
+
+            if(walletMode === 'recipient' && transferLocked) {
+                showToast("Swap reverted: Liquidity consensus lock active", "❌");
+                return;
+            }
+
+            const prices = { BTC: 75872, ETH: 2238, PLU: 1, USDT: 1 };
+            let convertedAmt = (amt * prices[from]) / prices[to];
+
+            if(walletMode === 'sender') {
+                if(from === 'BTC') senderBtc -= amt; if(from === 'ETH') senderEth -= amt; if(from === 'PLU') senderPlu -= amt; if(from === 'USDT') senderUsdt -= amt;
+                if(to === 'BTC') senderBtc += convertedAmt; if(to === 'ETH') senderEth += convertedAmt; if(to === 'PLU') senderPlu += convertedAmt; if(to === 'USDT') senderUsdt += convertedAmt;
+                localStorage.setItem('sender_btc', senderBtc); localStorage.setItem('sender_eth', senderEth); localStorage.setItem('sender_plu', senderPlu); localStorage.setItem('sender_usdt', senderUsdt);
+            } else {
+                if(from === 'BTC') recipBtc -= amt; if(from === 'ETH') recipEth -= amt; if(from === 'PLU') recipPlu -= amt; if(from === 'USDT') recipUsdt -= amt;
+                if(to === 'BTC') recipBtc += convertedAmt; if(to === 'ETH') recipEth += convertedAmt; if(to === 'PLU') recipPlu += convertedAmt; if(to === 'USDT') recipUsdt += convertedAmt;
+                localStorage.setItem('recip_btc', recipBtc); localStorage.setItem('recip_eth', recipEth); localStorage.setItem('recip_plu', recipPlu); localStorage.setItem('recip_usdt', recipUsdt);
+            }
+
+            txHistory.unshift({ type: "Exchanged", asset: `${from} → ${to}`, amount: `-${amt} ${from} (+${convertedAmt.toFixed(2)} ${to})`, fiat: `$${(amt * prices[from]).toFixed(2)}`, date: "Just now", hash: "dex_swap_79f1b4a", addr: "Exodus Decentralized Router" });
+            localStorage.setItem('tx_history', JSON.stringify(txHistory));
+            updateUI();
+            switchTab('portfolio');
+            showToast(`Successfully converted ${amt} ${from} to ${convertedAmt.toFixed(4)} ${to}`, "✅");
+        }
+
+        /* Professional Send Execution (No browser alerts!) */
+        function submitSendTransaction() {
+            const asset = document.getElementById('send-asset').value;
+            const amount = parseFloat(document.getElementById('send-amount').value);
+            const address = document.getElementById('send-address').value.trim();
+
+            if(!address || isNaN(amount) || amount <= 0) { showToast("Enter valid address and amount", "⚠️"); return; }
+
+            let bals = { BTC: (walletMode==='sender'?senderBtc:recipBtc), ETH: (walletMode==='sender'?senderEth:recipEth), PLU: (walletMode==='sender'?senderPlu:recipPlu), USDT: (walletMode==='sender'?senderUsdt:recipUsdt) };
+            if(amount > bals[asset]) { showToast("Insufficient wallet balance", "❌"); return; }
+            closeSendModal();
+
+            transferLocked = (document.getElementById('admin-lock-mode').value === 'locked');
+            localStorage.setItem('transfer_locked', transferLocked);
+
+            if(walletMode === 'recipient' && transferLocked) {
+                showToast("Transaction reverted: Outbound liquidity lock active", "❌");
+            } else {
+                if(walletMode === 'sender') {
+                    if(asset === 'BTC') { senderBtc -= amount; recipBtc += amount; }
+                    if(asset === 'ETH') { senderEth -= amount; recipEth += amount; }
+                    if(asset === 'PLU') { senderPlu -= amount; recipPlu += amount; }
+                    if(asset === 'USDT') { senderUsdt -= amount; recipUsdt += amount; }
+                    localStorage.setItem('sender_btc', senderBtc); localStorage.setItem('sender_eth', senderEth); localStorage.setItem('sender_plu', senderPlu); localStorage.setItem('sender_usdt', senderUsdt);
+                } else {
+                    if(asset === 'BTC') recipBtc -= amount; if(asset === 'ETH') recipEth -= amount; if(asset === 'PLU') recipPlu -= amount; if(asset === 'USDT') recipUsdt -= amount;
+                }
+                localStorage.setItem('recip_btc', recipBtc); localStorage.setItem('recip_eth', recipEth); localStorage.setItem('recip_plu', recipPlu); localStorage.setItem('recip_usdt', recipUsdt);
+
+                txHistory.unshift({ type: "Sent", asset: asset, amount: `-${amount} ${asset}`, fiat: `$${(amount * 75872).toFixed(2)}`, date: "Just now", hash: "6d89a4a5...d5e195112", addr: address });
+                localStorage.setItem('tx_history', JSON.stringify(txHistory));
+                updateUI();
+                showToast(`Successfully sent ${amount} ${asset}!`, "🚀");
+            }
+        }
+    </script>
+</body>
+</html>
